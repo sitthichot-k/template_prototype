@@ -1,0 +1,53 @@
+{
+  "common": {
+    "save": "บันทึก",
+    "cancel": "ยกเลิก",
+    "delete": "ลบ",
+    "edit": "แก้ไข",
+    "create": "สร้าง",
+    "search": "ค้นหา",
+    "loading": "กำลังโหลด…",
+    "noData": "ไม่มีข้อมูล",
+    "confirm": "ยืนยัน",
+    "back": "ย้อนกลับ",
+    "actions": "การจัดการ",
+    "status": "สถานะ",
+    "createdAt": "สร้างเมื่อ",
+    "updatedAt": "แก้ไขล่าสุด"
+  },
+  "auth": {
+    "signIn": "เข้าสู่ระบบ",
+    "signOut": "ออกจากระบบ",
+    "email": "อีเมลหรือชื่อผู้ใช้",
+    "password": "รหัสผ่าน",
+    "signInWithSso": "เข้าสู่ระบบด้วย SSO",
+    "sessionExpired": "เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง",
+    "invalidCredentials": "อีเมลหรือรหัสผ่านไม่ถูกต้อง"
+  },
+  "menu": {
+    "dashboard": "แดชบอร์ด",
+    "security": "ความปลอดภัย",
+    "security.users": "ผู้ใช้งาน",
+    "security.roles": "บทบาท",
+    "security.permissions": "ตารางสิทธิ์",
+    "security.policies": "นโยบายการเข้าถึง",
+    "security.sessions": "เซสชันที่ใช้งาน",
+    "security.audit": "บันทึกการตรวจสอบ",
+    "settings": "ตั้งค่า",
+    "observability": "การติดตามระบบ",
+    "observability.logs": "บันทึกระบบ",
+    "settings.general": "ทั่วไป",
+    "settings.branding": "แบรนด์และธีม",
+    "settings.security": "ความปลอดภัย",
+    "settings.observability": "การติดตามระบบ",
+    "settings.notification": "การแจ้งเตือน",
+    "settings.localization": "ภาษาและภูมิภาค",
+    "settings.features": "ฟีเจอร์",
+    "account.profile": "โปรไฟล์"
+  },
+  "error": {
+    "forbidden": "คุณไม่มีสิทธิ์เข้าถึงหน้านี้",
+    "notFound": "ไม่พบหน้าที่ต้องการ",
+    "network": "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้"
+  }
+}

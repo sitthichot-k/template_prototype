@@ -1,0 +1,231 @@
+# =============================================================================
+#  Enterprise Template - Root .gitignore
+#  Security posture: DENY-BY-DEFAULT for anything that can carry a secret.
+#  Rule: only *.example / *.template / *.sample variants are ever committed.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. Secrets & environment files  (HIGHEST PRIORITY)
+# -----------------------------------------------------------------------------
+.env
+.env.*
+*.env
+env/
+!.env.example
+!.env.*.example
+!*.env.example
+
+# Anything that smells like a credential, regardless of location
+*secret*
+*secrets*
+*credential*
+*credentials*
+!**/credentials.example.*
+!**/secrets.example.*
+
+# Cloud / infra credential caches
+.aws/
+.azure/
+.gcloud/
+gcloud-service-key.json
+*service-account*.json
+.kube/
+kubeconfig
+kubeconfig.*
+*.kubeconfig
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraformrc
+terraform.rc
+.vault-token
+.netrc
+_netrc
+.npmrc
+.yarnrc
+!.npmrc.example
+
+# -----------------------------------------------------------------------------
+# 2. Keys, certificates, tokens
+# -----------------------------------------------------------------------------
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.truststore
+*.crt
+*.cer
+*.der
+*.csr
+*.asc
+*.gpg
+*.pgp
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+*.ppk
+known_hosts
+authorized_keys
+jwt-*.pem
+private/
+certs/
+!certs/.gitkeep
+!infra/nginx/certs/.gitkeep
+
+# -----------------------------------------------------------------------------
+# 3. Database dumps, backups, personal data (PDPA/GDPR exposure)
+# -----------------------------------------------------------------------------
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+*.bson
+*.dump
+*.mongodump
+dump/
+backups/
+backup/
+*.bak
+*.backup
+data/
+mongo-data/
+redis-data/
+minio-data/
+*.csv.export
+exports/
+!database/seeds/**/*.json
+!database/migrations/**
+
+# -----------------------------------------------------------------------------
+# 4. Node / JavaScript
+# -----------------------------------------------------------------------------
+node_modules/
+jspm_packages/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/versions
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.npm
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+.node_repl_history
+package-lock.json.orig
+
+# -----------------------------------------------------------------------------
+# 5. Build output
+# -----------------------------------------------------------------------------
+dist/
+dist-ssr/
+build/
+out/
+.output/
+.nuxt/
+.next/
+.vite/
+.turbo/
+.parcel-cache/
+.cache/
+storybook-static/
+coverage/
+.nyc_output/
+*.local
+
+# -----------------------------------------------------------------------------
+# 6. Logs & runtime artifacts
+# -----------------------------------------------------------------------------
+logs/
+*.log
+*.log.*
+pids/
+*.pid
+*.seed
+*.pid.lock
+.pm2/
+tmp/
+temp/
+.tmp/
+
+# -----------------------------------------------------------------------------
+# 7. Test / QA artifacts (may embed fixtures with real data)
+# -----------------------------------------------------------------------------
+playwright-report/
+test-results/
+cypress/screenshots/
+cypress/videos/
+.jest-cache/
+*.lcov
+allure-results/
+
+# -----------------------------------------------------------------------------
+# 8. Uploads & user-generated content
+# -----------------------------------------------------------------------------
+uploads/
+storage/
+public/uploads/
+backend-node/public/uploads/
+!**/uploads/.gitkeep
+
+# -----------------------------------------------------------------------------
+# 9. IDE / editor / OS
+# -----------------------------------------------------------------------------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.shared.json
+*.swp
+*.swo
+*~
+.history/
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# -----------------------------------------------------------------------------
+# 10. Security scanner / audit output (can contain findings + snippets)
+# -----------------------------------------------------------------------------
+.snyk
+snyk-result.json
+trivy-report.*
+gitleaks-report.*
+semgrep-results.*
+*.sarif
+
+# -----------------------------------------------------------------------------
+# 11. Template generator working files
+# -----------------------------------------------------------------------------
+.generated/
+.template-cache/
+generated-projects/
+
+# -----------------------------------------------------------------------------
+# 12. Explicit allowlist (must come last to survive broad denies above)
+# -----------------------------------------------------------------------------
+!.gitignore
+!.gitattributes
+!.dockerignore
+!.editorconfig
+!.nvmrc
+!.env.example
+!.env.local.example
+!.env.preproduction.example
+!.env.production.example

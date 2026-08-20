@@ -1,0 +1,51 @@
+# Paths excluded when the generator copies this template into a child project.
+# Syntax matches .gitignore.
+
+.git/
+node_modules/
+generated-projects/
+.generated/
+.template-cache/
+
+# Agent and editor state belongs to whoever is working on the template, not to
+# every project generated from it.
+.claude/
+.vscode/
+.idea/
+
+# Only the template needs the copy-exclusion list.
+.templateignore
+
+# The template manifest describes the template. The generator writes
+# project.manifest.json in its place, describing the child.
+template.manifest.json
+
+# Real env files never travel to a child project - the generator renders them.
+.env
+.env.local
+.env.preproduction
+.env.production
+backend-node/.env.local
+backend-node/.env.preproduction
+backend-node/.env.production
+frontend-vue/.env.local
+frontend-vue/.env.preproduction
+frontend-vue/.env.production
+
+# Build + test output
+dist/
+build/
+coverage/
+logs/
+*.log
+
+# Template-authoring-only material.
+# The generator itself does not travel to a child project: a generated project
+# is an application, not a template, and shipping the generator would invite
+# someone to re-generate on top of their own work.
+tools/generator/
+docs/adr/README-template-authors.md
+
+# Product requirements for the template itself. A child inherits the result of
+# these decisions, not the backlog behind them.
+docs/prd/

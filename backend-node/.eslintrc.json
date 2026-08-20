@@ -1,0 +1,63 @@
+{
+  "root": true,
+  "env": {
+    "node": true,
+    "es2022": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "script"
+  },
+  "extends": ["eslint:recommended", "prettier"],
+  "rules": {
+    "strict": ["error", "global"],
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "no-unused-vars": ["error", { "argsIgnorePattern": "^_|^next$", "ignoreRestSiblings": true }],
+    "no-return-await": "error",
+    // Off deliberately: module hooks, identity providers and the policy loader
+    // are async because their interface says so, not because they always await.
+    "require-await": "off",
+    "eqeqeq": ["error", "smart"],
+    "prefer-const": "error",
+    "no-var": "error",
+    "camelcase": ["warn", { "properties": "never" }],
+    "consistent-return": "off",
+    "complexity": ["warn", 20],
+    "max-depth": ["warn", 4],
+
+    "no-restricted-properties": [
+      "error",
+      {
+        "object": "process",
+        "property": "env",
+        "message": "Read configuration through require('config') so every variable is declared and validated in one place."
+      }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["**/modules/*/models/*", "!**/modules/*/models/index*"],
+            "message": "Reach another module's model through mongoose.model(name) or its service, not by file path."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["config/index.js", "scripts/**/*.js", "server/core/kernel/module-loader.js"],
+      "rules": {
+        "no-restricted-properties": "off",
+        "no-console": "off"
+      }
+    },
+    {
+      "files": ["test/**/*.js", "**/*.test.js"],
+      "env": { "node": true },
+      "rules": { "no-restricted-properties": "off" }
+    }
+  ],
+  "ignorePatterns": ["node_modules/", "coverage/", "public/"]
+}

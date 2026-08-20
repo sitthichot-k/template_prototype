@@ -1,0 +1,53 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "loading": "Loading…",
+    "noData": "No records",
+    "confirm": "Confirm",
+    "back": "Back",
+    "actions": "Actions",
+    "status": "Status",
+    "createdAt": "Created",
+    "updatedAt": "Updated"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "email": "Email or username",
+    "password": "Password",
+    "signInWithSso": "Sign in with SSO",
+    "sessionExpired": "Your session expired. Please sign in again.",
+    "invalidCredentials": "Incorrect email or password"
+  },
+  "menu": {
+    "dashboard": "Dashboard",
+    "security": "Security",
+    "security.users": "Users",
+    "security.roles": "Roles",
+    "security.permissions": "Permission matrix",
+    "security.policies": "Policies",
+    "security.sessions": "Sessions",
+    "security.audit": "Audit trail",
+    "observability": "Monitoring",
+    "observability.logs": "Logs",
+    "settings": "Settings",
+    "settings.general": "General",
+    "settings.branding": "Branding",
+    "settings.security": "Security",
+    "settings.observability": "Monitoring",
+    "settings.notification": "Notifications",
+    "settings.localization": "Localisation",
+    "settings.features": "Feature flags",
+    "account.profile": "Profile"
+  },
+  "error": {
+    "forbidden": "You do not have permission to view this page",
+    "notFound": "The page could not be found",
+    "network": "Could not reach the server"
+  }
+}

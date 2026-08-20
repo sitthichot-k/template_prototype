@@ -1,0 +1,14 @@
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+
+# Never diff these in review tooling - reduces accidental secret display
+*.lock -diff
+package-lock.json -diff linguist-generated=true

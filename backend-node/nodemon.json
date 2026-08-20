@@ -1,0 +1,10 @@
+{
+  "watch": ["server.js", "server", "config", "middleware"],
+  "ext": "js,json",
+  "ignore": ["**/*.test.js", "test/**", "node_modules/**", "public/**"],
+  "delay": 500,
+  "verbose": false,
+  "env": {
+    "NODE_ENV": "development"
+  }
+}

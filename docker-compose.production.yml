@@ -1,0 +1,121 @@
+# =============================================================================
+#  PRODUCTION OVERLAY
+#    docker compose --env-file .env.production \
+#      -f docker-compose.yml -f docker-compose.production.yml up -d
+#
+#  Images are pulled from the registry - production never builds from source.
+#  IMAGE_TAG must be an immutable release tag, never `latest`.
+# =============================================================================
+
+services:
+  mongo:
+    ports: !reset []
+    command:
+      - --bind_ip_all
+      - --wiredTigerCacheSizeGB
+      - "2"
+      - --auth
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "10"
+
+  redis:
+    ports: !reset []
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+    security_opt:
+      - no-new-privileges:true
+
+  backend:
+    # Build is disabled: the image must come from the registry, already
+    # scanned and signed by the pipeline.
+    build: !reset null
+    image: ${REGISTRY:?REGISTRY is required}/${IMAGE_NAMESPACE:?IMAGE_NAMESPACE is required}/${PROJECT_CODE}-backend:${IMAGE_TAG:?IMAGE_TAG must be an immutable release tag}
+    pull_policy: always
+    environment:
+      NODE_ENV: production
+      APP_ENV: production
+      LOG_LEVEL: warn
+      LOG_PRETTY: "false"
+      SWAGGER_ENABLED: "false"
+      TRUST_PROXY: "1"
+    ports:
+      - "${BACKEND_BIND_IP:-127.0.0.1}:${BACKEND_PORT:-8081}:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    stop_grace_period: 30s
+    deploy:
+      replicas: ${BACKEND_REPLICAS:-2}
+      resources:
+        limits:
+          cpus: "${BACKEND_CPU_LIMIT:-4}"
+          memory: ${BACKEND_MEMORY_LIMIT:-4g}
+        reservations:
+          cpus: "0.5"
+          memory: 512m
+      update_config:
+        order: start-first
+        failure_action: rollback
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "10"
+
+  frontend:
+    build: !reset null
+    image: ${REGISTRY:?REGISTRY is required}/${IMAGE_NAMESPACE:?IMAGE_NAMESPACE is required}/${PROJECT_CODE}-frontend:${IMAGE_TAG:?IMAGE_TAG must be an immutable release tag}
+    pull_policy: always
+    ports:
+      - "${FRONTEND_BIND_IP:-127.0.0.1}:${FRONTEND_PORT:-8080}:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+      - /var/cache/nginx:size=32m,mode=1777
+      - /var/run:size=8m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    stop_grace_period: 15s
+    deploy:
+      replicas: ${FRONTEND_REPLICAS:-2}
+      resources:
+        limits:
+          cpus: "${FRONTEND_CPU_LIMIT:-1}"
+          memory: ${FRONTEND_MEMORY_LIMIT:-512m}
+      update_config:
+        order: start-first
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5

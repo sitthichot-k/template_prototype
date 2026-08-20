@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <!-- Kept out of the index so a stale referrer never leaks an internal URL -->
+    <meta name="referrer" content="no-referrer" />
+    <!-- An admin console has no business being indexed -->
+    <meta name="robots" content="noindex, nofollow" />
+
+    <!-- Replaced by the generator; the runtime title comes from
+         `general.appName` once the platform store loads. -->
+    <title>__PROJECT_NAME__</title>
+
+    <!--
+      Paints the theme before the bundle loads. Without this a user on the dark
+      theme gets a full-page white flash on every navigation to the app, which
+      is the one theming bug people notice every single time. Kept inline and
+      dependency-free on purpose - it must run before anything else.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme-preference');
+          var dark =
+            stored === 'dark' ||
+            ((!stored || stored === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+        } catch (error) {
+          /* Private mode can refuse localStorage; the CSS fallback covers it. */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <noscript>This application requires JavaScript.</noscript>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

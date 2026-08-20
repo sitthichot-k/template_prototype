@@ -1,0 +1,508 @@
+/* Reset and shared primitives. Component styles stay scoped; only genuinely
+   global rules belong here. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-primary);
+}
+
+/* Visible focus is a requirement, not a preference - removing it makes the
+   app unusable by keyboard. */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* --- Page header ------------------------------------------------------------
+ *
+ * Every screen opens the same way. This lived in eleven scoped style blocks
+ * under two different names - `.page__header` on six screens and `.head` on
+ * five - each with its own idea of the title size, the gap and whether actions
+ * wrapped. That is how one screen ends up with a gradient banner and nobody
+ * notices it no longer matches.
+ *
+ *   <header class="page-header">
+ *     <div>
+ *       <h1 class="page-header__title">Users</h1>
+ *       <p class="page-header__meta">optional one-liner</p>
+ *       <p class="page-header__description">optional longer explanation</p>
+ *     </div>
+ *     <div class="page-header__actions"> … .btn … </div>
+ *   </header>
+ *
+ * A single action can be a bare `.btn` child; it is pushed right either way.
+ * ------------------------------------------------------------------------- */
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.page-header__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.page-header__meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.page-header__description {
+  margin: 0.5rem 0 0;
+  max-width: 48rem;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.page-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+/* The single-action case, so a screen with one button needs no wrapper. */
+.page-header > .btn {
+  margin-left: auto;
+}
+
+/* --- Forms ----------------------------------------------------------------- */
+
+/* Textareas grow downwards only.
+   The browser default is `resize: both`, which lets a field be dragged wider
+   than the form containing it - no layout survives that, and the handle is
+   right there inviting it. Height is the dimension people actually need, for a
+   long description or a block of JSON, so that one stays.
+   An element selector deliberately: it is the lowest specificity in the file,
+   so any field that genuinely needs to resize differently can just say so. */
+textarea {
+  resize: vertical;
+  min-height: 2.5rem;
+}
+
+/* One field standard, shared by every editor dialog.
+   These live here rather than in each component because three components
+   duplicating the same 120 lines is how two of them end up subtly different -
+   a label weight here, a help-text colour there - and the forms stop looking
+   like one application. Component styles then only describe what is genuinely
+   unique to that form. */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.625rem 0;
+}
+
+.form-field--inline {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.625rem;
+}
+
+/* Two fields side by side. Collapses on narrow viewports rather than shrinking
+   both controls past usefulness. */
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.form-row > .form-field {
+  flex: 1 1 12rem;
+}
+
+.form-field__label {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+/* The required marker. Drawn in exactly one place - `components/common/
+   FormField.vue` - so changing what "required" looks like is one edit. */
+.form-field__required {
+  margin-left: 0.125rem;
+  color: var(--color-danger);
+}
+
+/* Set by `validate()` on a field left blank, cleared as soon as it is filled.
+   The border carries it rather than a background tint, which would fight the
+   focus ring on the very control the user is being sent back to. */
+.form-field--invalid .form-field__control,
+.form-field--invalid input,
+.form-field--invalid select,
+.form-field--invalid textarea {
+  border-color: var(--color-danger);
+}
+
+.form-field__control {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.form-field__control--mono {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.form-field__help {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.form-field__error {
+  font-size: 0.8125rem;
+  color: var(--color-danger);
+}
+
+.form-field__warning {
+  font-size: 0.8125rem;
+  color: var(--color-warning);
+}
+
+.form-field__checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.form-field__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+}
+
+/* Form-level failure, distinct from a single field's error. */
+.form-alert {
+  margin: 0.75rem 0 0;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+}
+
+.form-alert--danger {
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  color: var(--color-danger);
+}
+
+.form-alert--warning {
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  color: var(--color-warning);
+}
+
+.form-alert--info {
+  background: color-mix(in srgb, var(--color-info) 12%, transparent);
+  color: var(--color-info);
+}
+
+/* --- Buttons ---------------------------------------------------------------
+ *
+ * One standard, so a button's weight always means the same thing:
+ *
+ *   Context                     Class
+ *   --------------------------  ------------------------------------------
+ *   Page or dialog main action  .btn .btn--primary
+ *   Anything secondary          .btn .btn--ghost
+ *   Destructive, as the         .btn .btn--danger
+ *     decision being confirmed
+ *   Inside a table row          add .btn--sm
+ *   Destructive in a table row  .btn .btn--danger-ghost .btn--sm
+ *
+ * The rule behind it: visual weight tracks how much the action is being
+ * recommended, not how dramatic it is. That is why a row of Delete buttons is
+ * `--danger-ghost` and not `--danger` - repeating the loudest style down a
+ * table advertises the action nobody should take by accident.
+ * ------------------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0.5rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.btn--ghost {
+  background: none;
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+.btn--danger {
+  background: var(--color-danger);
+  color: var(--color-text-inverse);
+}
+
+/* A destructive action that is quiet until you reach for it.
+   `.btn--danger` is correct for the confirm button of a dialog, where deleting
+   is the thing being decided. Repeated down every row of a table it is just
+   the loudest element on the page attached to the least desirable action. */
+.btn--danger-ghost {
+  background: none;
+  border-color: var(--color-border);
+  color: var(--color-danger);
+}
+
+.btn--danger-ghost:hover:not(:disabled) {
+  border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+}
+
+/* Compact variant, for buttons that sit inside a table row rather than in a
+   toolbar. A row of full-size buttons sets the row height for every record. */
+.btn--sm {
+  padding: 0.1875rem 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+/* Wrapper for a table row's action buttons. Shared so the gap and alignment
+   cannot drift between one list screen and the next. */
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.375rem;
+}
+
+/* --- Cards and tables ------------------------------------------------------ */
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+/* Wide tables scroll inside their own container so the page never scrolls
+   horizontally. */
+/* Wide content scrolls inside its own box. The page itself must never scroll
+   sideways - see the responsive section at the end of this file. */
+.table-scroll {
+  overflow-x: auto;
+  /* Momentum scrolling on touch, and a visible hint that there is more. */
+  -webkit-overflow-scrolling: touch;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+
+/* --- Responsive baseline -----------------------------------------------------
+ *
+ * The rules every screen gets for free. A view should need its own media query
+ * only when its content genuinely reflows differently - not to fix a table
+ * overflowing or a heading crowding a button, both of which are handled here.
+ *
+ * The one invariant: **the page never scrolls sideways.** Wide content scrolls
+ * inside its own container (`.table-scroll`) so the header, the sidebar and
+ * the rest of the column stay where the reader left them.
+ *
+ * Breakpoints come from `tokens.css` (--bp-sm/md/lg/xl). CSS cannot read a
+ * custom property inside `@media`, so the literals are repeated - but only
+ * those four values, never a new one.
+ * ------------------------------------------------------------------------- */
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+/* Media never overflows its column, whatever its intrinsic size. */
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* A long unbroken token - an email, a URL, a permission path - must wrap
+   rather than widen the layout that contains it. */
+.page {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Tables get a readable floor, not their natural width. `max-content` looks
+   like the right answer - keep the columns as wide as their content and let
+   the container scroll - but it is unbounded: it forbids wrapping anywhere, so
+   one long cell (a 300-character user agent) sets the width of the whole
+   table, and auto layout hands the slack to every other column. The result is
+   a table many screens wide on a desktop that had room to spare.
+
+   A rem floor does the job the intent asked for - a ten-column grid still
+   scrolls rather than collapsing on a 360px phone - and does nothing once the
+   container is wider than it. Screens whose tables need a taller floor raise
+   it themselves (see `.logs`, `.matrix`). */
+.table {
+  min-width: 32rem;
+}
+
+/* --- Below --bp-md: phones and small tablets ------------------------------- */
+@media (max-width: 48rem) {
+  .page-header {
+    gap: 0.625rem;
+    margin-bottom: 1rem;
+  }
+
+  .page-header__title {
+    font-size: 1.25rem;
+  }
+
+  /* Actions drop under the heading and fill the width, instead of being
+     squeezed to one word each on the same line. */
+  .page-header__actions,
+  .page-header > .btn {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .card {
+    padding: var(--space-4);
+  }
+
+  /* Side-by-side field pairs stack. */
+  .form-row > .form-field {
+    flex: 1 1 100%;
+  }
+
+  /* A dialog on a phone is the screen, not a card floating on it. */
+  .modal--sm,
+  .modal--md,
+  .modal--lg {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .modal__frame {
+    max-height: 100dvh;
+    min-height: 100dvh;
+  }
+
+  /* Footer buttons are the primary action on a touch screen: full width, and
+     the confirming action last so it sits under the thumb. */
+  .modal__footer {
+    flex-direction: column-reverse;
+  }
+
+  .modal__footer .btn {
+    width: 100%;
+  }
+}
+
+/* --- Below --bp-sm: small phones ------------------------------------------ */
+@media (max-width: 40rem) {
+  /* Row actions wrap instead of forcing the actions column wider than the
+     data it belongs to. */
+  .row-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+
+/* --- Touch input ------------------------------------------------------------
+   Pointer coarseness is a better test than width for hit targets: a tablet is
+   wide and still touched. 44px is the usual accessibility floor. */
+@media (pointer: coarse) {
+  .btn {
+    min-height: 2.75rem;
+  }
+
+  .btn--sm {
+    min-height: 2.25rem;
+  }
+
+  .form-field__control,
+  .form-field__check input,
+  .data-table__search {
+    min-height: 2.75rem;
+  }
+}

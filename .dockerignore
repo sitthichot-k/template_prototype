@@ -1,0 +1,25 @@
+# Keep build context small and free of secrets.
+**/node_modules
+**/dist
+**/build
+**/coverage
+**/.git
+**/.gitignore
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pem
+**/*.key
+**/*.crt
+**/logs
+**/*.log
+**/tmp
+**/.cache
+**/.turbo
+**/.vscode
+**/.idea
+**/test-results
+**/playwright-report
+docs/
+generated-projects/
+.generated/

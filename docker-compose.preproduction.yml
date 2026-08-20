@@ -1,0 +1,80 @@
+# =============================================================================
+#  PREPRODUCTION / STAGING OVERLAY
+#    docker compose --env-file .env.preproduction \
+#      -f docker-compose.yml -f docker-compose.preproduction.yml up -d
+#
+#  Production topology and hardening, non-production data. This is the tier
+#  where a release is validated before it is promoted.
+# =============================================================================
+
+services:
+  mongo:
+    # Datastores are not published to the host. Reach them with
+    #   docker compose exec mongo mongosh
+    ports: !reset []
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+    security_opt:
+      - no-new-privileges:true
+
+  redis:
+    ports: !reset []
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    security_opt:
+      - no-new-privileges:true
+
+  backend:
+    build:
+      target: production
+    pull_policy: always
+    environment:
+      NODE_ENV: production
+      APP_ENV: preproduction
+      LOG_LEVEL: info
+      LOG_PRETTY: "false"
+      # Swagger stays on in preproduction so QA can exercise the contract.
+      SWAGGER_ENABLED: "true"
+    ports:
+      - "${BACKEND_BIND_IP:-127.0.0.1}:${BACKEND_PORT:-8081}:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    deploy:
+      resources:
+        limits:
+          cpus: "${BACKEND_CPU_LIMIT:-2}"
+          memory: ${BACKEND_MEMORY_LIMIT:-2g}
+
+  frontend:
+    build:
+      target: production
+    pull_policy: always
+    ports:
+      - "${FRONTEND_BIND_IP:-127.0.0.1}:${FRONTEND_PORT:-8080}:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+      - /var/cache/nginx:size=32m,mode=1777
+      - /var/run:size=8m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "${FRONTEND_CPU_LIMIT:-1}"
+          memory: ${FRONTEND_MEMORY_LIMIT:-512m}

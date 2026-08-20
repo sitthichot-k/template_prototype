@@ -1,0 +1,203 @@
+{
+  "$schema": "./docs/schemas/template-manifest.schema.json",
+  "templateName": "enterprise-platform-template",
+  "templateVersion": "1.0.0",
+  "compatProfile": "platform-v1",
+  "description": "Enterprise blueprint that generates child projects with a self-contained MongoDB access-control core, a dynamic settings engine, and a Vue 3 frontend driven by the bootstrap contract.",
+
+  "engines": {
+    "node": ">=20.11 <23",
+    "npm": ">=10",
+    "docker": ">=24",
+    "dockerCompose": ">=2.24"
+  },
+
+  "stack": {
+    "database": { "engine": "mongodb", "version": "7.0", "odm": "mongoose" },
+    "cache": { "engine": "redis", "version": "7" },
+    "backend": { "runtime": "node", "framework": "express", "moduleSystem": "commonjs" },
+    "frontends": [
+      { "id": "vue", "path": "frontend-vue", "framework": "vue", "version": "3", "default": true }
+    ]
+  },
+
+  "tiers": [
+    { "id": "local", "envFile": ".env.local", "composeOverlay": "docker-compose.local.yml", "nodeEnv": "development" },
+    { "id": "preproduction", "envFile": ".env.preproduction", "composeOverlay": "docker-compose.preproduction.yml", "nodeEnv": "production" },
+    { "id": "production", "envFile": ".env.production", "composeOverlay": "docker-compose.production.yml", "nodeEnv": "production" }
+  ],
+
+  "generator": {
+    "cli": "tools/generator/bin/create-project.js",
+    "command": "node tools/generator/bin/create-project.js",
+    "copyExcludesFile": ".templateignore",
+    "tokenSyntax": "__TOKEN__",
+    "tokens": [
+      { "name": "PROJECT_CODE", "required": true, "pattern": "^[a-z][a-z0-9-]{1,30}$", "description": "Machine-safe slug used for db name, image name, permission root." },
+      { "name": "PROJECT_NAME", "required": true, "description": "Human-readable display name." },
+      { "name": "PROJECT_DESCRIPTION", "required": false, "description": "One-line description used in docs, swagger and package.json." },
+      { "name": "PROJECT_VERSION", "required": false, "default": "1.0.0" },
+      { "name": "ORG_NAME", "required": false, "default": "Acme", "description": "Owning organisation, used in branding defaults." },
+      { "name": "PRIMARY_COLOR", "required": false, "default": "#2563eb" },
+      { "name": "DEFAULT_LOCALE", "required": false, "default": "th", "enum": ["th", "en"] }
+    ],
+    "templateOnlyMarkers": { "open": ">>> template-only", "close": "<<< template-only" },
+    "phases": [
+      "validate-inputs",
+      "copy-tree",
+      "apply-tokens",
+      "strip-template-only",
+      "place-nginx-context",
+      "render-env-files",
+      "generate-secrets",
+      "render-child-narrative",
+      "write-child-manifest"
+    ],
+    "plannedPhases": [
+      { "id": "install-optional-modules", "prd": "docs/prd/template-generator.md#6-functional-requirements", "requirement": "F8" },
+      { "id": "record-baseline", "prd": "docs/prd/template-generator.md#7-upgrade-model", "requirement": "F10" },
+      { "id": "install-quality-gates", "prd": "docs/prd/template-generator.md#6-functional-requirements", "requirement": "F12" },
+      { "id": "post-generate-verify", "prd": "docs/prd/template-generator.md#6-functional-requirements", "requirement": "F13" }
+    ]
+  },
+
+  "moduleSystem": {
+    "backendModuleRoot": "backend-node/server/modules",
+    "manifestFile": "module.manifest.js",
+    "discovery": "filesystem-scan",
+    "contract": "docs/guides/module-authoring.md",
+    "lifecycleHooks": ["register", "onBoot", "onReady", "onShutdown"],
+    "capabilities": [
+      "routes",
+      "models",
+      "permissions",
+      "settingsSchema",
+      "menu",
+      "jobs",
+      "events",
+      "seeds"
+    ]
+  },
+
+  "coreModules": [
+    {
+      "id": "access-control",
+      "phase": 1,
+      "required": true,
+      "path": "backend-node/server/modules/access-control",
+      "provides": ["identity", "authentication", "authorization", "rbac", "abac-policies", "sessions", "audit"],
+      "permissionPaths": [
+        "/security/users",
+        "/security/roles",
+        "/security/permissions",
+        "/security/policies",
+        "/security/sessions",
+        "/security/audit"
+      ]
+    },
+    {
+      "id": "settings",
+      "phase": 1,
+      "required": true,
+      "path": "backend-node/server/modules/settings",
+      "provides": ["dynamic-settings", "settings-schema-registry", "feature-flags", "branding", "localization"],
+      "permissionPaths": [
+        "/settings/general",
+        "/settings/security",
+        "/settings/notification",
+        "/settings/integration",
+        "/settings/feature-flags",
+        "/settings/localization"
+      ]
+    },
+    {
+      "id": "platform",
+      "phase": 1,
+      "required": true,
+      "path": "backend-node/server/modules/platform",
+      "provides": ["bootstrap-contract", "dynamic-menu", "health", "module-registry-introspection"],
+      "permissionPaths": []
+    },
+    {
+      "id": "observability",
+      "phase": 1,
+      "required": true,
+      "path": "backend-node/server/modules/observability",
+      "provides": ["request-logging", "log-viewer", "log-retention"],
+      "permissionPaths": ["/observability/logs"]
+    }
+  ],
+
+  "optionalModules": [
+    { "id": "notification", "phase": 2, "description": "Email/LINE/webhook delivery with templating." },
+    { "id": "file-storage", "phase": 2, "description": "Uploads with virus scan hook and signed URLs." },
+    { "id": "workflow", "phase": 3, "description": "Configurable approval chains driven by settings." },
+    { "id": "reporting", "phase": 3, "description": "Saved queries and scheduled exports." },
+    { "id": "form-builder", "phase": 3, "description": "Runtime-defined entities rendered by the dynamic UI engine." }
+  ],
+
+  "dynamicDesign": {
+    "principle": "Anything the business changes at runtime lives in the database, not in a deploy.",
+    "pillars": [
+      {
+        "id": "dynamic-modules",
+        "summary": "Backend modules self-register from module.manifest.js; adding a folder adds routes, permissions, settings and menu entries."
+      },
+      {
+        "id": "dynamic-permissions",
+        "summary": "Permission catalogue is derived from module manifests and synced into MongoDB on boot; resolution is resource-path + action with ABAC policy overlay."
+      },
+      {
+        "id": "dynamic-settings",
+        "summary": "Every setting is declared as a JSON-Schema-like descriptor; CRUD and UI are generic, so a new setting needs no new screen."
+      },
+      {
+        "id": "dynamic-ui",
+        "summary": "The frontend renders navigation, forms and tables from the /platform/bootstrap contract, so a new backend module needs no frontend work."
+      }
+    ],
+    "bootstrapContract": "GET /api/v1/platform/bootstrap"
+  },
+
+  "generatedEnvFiles": [
+    ".env.local",
+    ".env.preproduction",
+    ".env.production",
+    "backend-node/.env.local",
+    "backend-node/.env.preproduction",
+    "backend-node/.env.production",
+    "frontend-vue/.env.local",
+    "frontend-vue/.env.preproduction",
+    "frontend-vue/.env.production"
+  ],
+
+  "generatedSecrets": [
+    { "key": "JWT_ACCESS_SECRET", "bytes": 48, "tiers": ["local"] },
+    { "key": "JWT_REFRESH_SECRET", "bytes": 48, "tiers": ["local"] },
+    { "key": "ENCRYPTION_KEY", "bytes": 32, "tiers": ["local"] },
+    { "key": "COOKIE_SECRET", "bytes": 32, "tiers": ["local"] },
+    { "key": "MONGO_APP_PASSWORD", "bytes": 24, "tiers": ["local"] },
+    { "key": "REDIS_PASSWORD", "bytes": 24, "tiers": ["local"] }
+  ],
+
+  "securityBaseline": {
+    "secretsNeverCommitted": true,
+    "envAllowlistPattern": "*.example",
+    "containerHardening": ["read_only", "no-new-privileges", "cap_drop:ALL", "non-root-user"],
+    "productionBuildsFromRegistryOnly": true,
+    "passwordHash": "argon2id",
+    "tokenStrategy": "short-lived JWT access token + rotating refresh token bound to a device session",
+    "auditedOperations": ["auth", "permission-change", "role-change", "settings-change", "user-lifecycle"]
+  },
+
+  "validationCommands": [
+    "npm --prefix backend-node run lint",
+    "npm --prefix frontend-vue run lint",
+    "npm --prefix backend-node run test",
+    "npm --prefix frontend-vue run test",
+    "node backend-node/scripts/verify-module-contracts.js",
+    "node --test tools/generator/test/*.test.js",
+    "node tools/generator/bin/create-project.js --dry-run --project-code smoke --project-name Smoke",
+    "docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml config -q"
+  ]
+}

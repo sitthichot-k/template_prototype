@@ -1,0 +1,96 @@
+# =============================================================================
+#  LOCAL / DEVELOPMENT OVERLAY
+#    docker compose --env-file .env.local \
+#      -f docker-compose.yml -f docker-compose.local.yml up -d --build
+#
+#  Trades hardening for developer feedback speed: source is bind-mounted,
+#  the API runs under nodemon, and datastores are published to the host.
+# =============================================================================
+
+services:
+  mongo:
+    ports:
+      - "${MONGO_BIND_IP:-127.0.0.1}:${MONGO_PORT:-27017}:27017"
+
+  redis:
+    ports:
+      - "${REDIS_BIND_IP:-127.0.0.1}:${REDIS_PORT:-6379}:6379"
+
+  backend:
+    build:
+      target: development
+    command: ["npm", "run", "start:dev"]
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+      LOG_PRETTY: "true"
+      SWAGGER_ENABLED: "true"
+      # File events do not cross a Windows/macOS bind mount into Linux, so
+      # nodemon sees nothing change and never restarts. Polling is the only
+      # thing that works reliably, and one second is a fine trade for a
+      # handful of watched directories.
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "1000"
+    volumes:
+      # Source is live-mounted; node_modules stays inside the image so that
+      # host and container native builds never collide.
+      - ./backend-node:/app
+      - backend-node-modules:/app/node_modules
+    ports:
+      - "${BACKEND_BIND_IP:-127.0.0.1}:${BACKEND_PORT:-8081}:8080"
+      # Node inspector for attaching a debugger.
+      - "${BACKEND_BIND_IP:-127.0.0.1}:9229:9229"
+
+  frontend:
+    build:
+      target: development
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "8080"]
+    environment:
+      NODE_ENV: development
+      # The Vite dev proxy runs INSIDE this container, so 127.0.0.1 is the dev
+      # server itself, not the API. Without this the proxy times out, every
+      # /api call fails, and the login screen renders with no providers.
+      VITE_DEV_API_TARGET: http://backend:8080
+      # Same bind-mount problem as the backend: Vite needs polling to notice a
+      # file change made on the host.
+      VITE_USE_POLLING: "true"
+    volumes:
+      - ${FRONTEND_CONTEXT:-./frontend-vue}:/app
+      - frontend-node-modules:/app/node_modules
+    ports:
+      - "${FRONTEND_BIND_IP:-127.0.0.1}:${FRONTEND_PORT:-8080}:8080"
+    # The dev server is usable before the API is healthy.
+    depends_on:
+      backend:
+        condition: service_started
+
+  # --- Developer-only tooling. Never present in the other tiers. -------------
+  mongo-express:
+    image: mongo-express:1.0.2
+    restart: unless-stopped
+    profiles: ["tools"]
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USER:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:-admin}
+    ports:
+      - "127.0.0.1:8082:8081"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - data
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    restart: unless-stopped
+    profiles: ["tools"]
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+    networks:
+      - edge
+
+volumes:
+  backend-node-modules:
+  frontend-node-modules:

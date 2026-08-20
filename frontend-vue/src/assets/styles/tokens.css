@@ -1,0 +1,128 @@
+/**
+ * Design tokens.
+ *
+ * `--color-primary` is intentionally overridable at runtime: the platform
+ * store writes the branding setting onto :root, so re-theming a child project
+ * is a settings change rather than a rebuild. Everything else derives from
+ * these, so a token change propagates without hunting through components.
+ *
+ * The two themes are deliberately at the extremes - light is white, dark is
+ * black - with separation carried by borders rather than by tinting the page.
+ * A grey-on-grey admin console looks fine until a child project drops its own
+ * brand colour in and every surface fights it.
+ */
+
+:root {
+  /* Brand - the default is replaced by the generator and again at runtime */
+  --color-primary: #2563eb;
+  --color-primary-hover: color-mix(in srgb, var(--color-primary) 85%, black);
+  /* Tinted fill for selected rows, active menu items, soft badges. Mixed
+     against the surface so it stays legible in both themes. */
+  --color-primary-soft: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+
+  /* Status */
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-info: #0891b2;
+
+  /* Surfaces - light theme: white page, white cards, borders do the work */
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f4f4f5;
+  --color-surface-sunken: #fafafa;
+  --color-border: #e4e4e7;
+  --color-border-strong: #d4d4d8;
+
+  /* Text */
+  --color-text: #09090b;
+  --color-text-muted: #71717a;
+  --color-text-inverse: #ffffff;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  /* Radii */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-full: 999px;
+
+  /* Breakpoints.
+   *
+   * Recorded as custom properties so JavaScript can read the same numbers
+   * (`getComputedStyle(document.documentElement).getPropertyValue('--bp-md')`)
+   * and a screen never disagrees with a `useMediaQuery` call about where the
+   * layout changes.
+   *
+   * CSS cannot use a custom property inside `@media`, so the literals must be
+   * repeated in stylesheets. Repeat THESE values, in `rem`, and nothing else -
+   * a one-off `@media (max-width: 900px)` is how a layout starts breaking at a
+   * width nothing else knows about.
+   *
+   *   --bp-sm  40rem / 640px   phone
+   *   --bp-md  48rem / 768px   large phone, small tablet - the drawer boundary
+   *   --bp-lg  64rem / 1024px  tablet, small laptop
+   *   --bp-xl  80rem / 1280px  desktop
+   */
+  --bp-sm: 40rem;
+  --bp-md: 48rem;
+  --bp-lg: 64rem;
+  --bp-xl: 80rem;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 6%);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 8%);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 12%);
+
+  /* Type */
+  --font-sans: 'Inter', 'Noto Sans Thai', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  color-scheme: light;
+}
+
+/* Dark theme. `data-theme` is written by the theme composable, which resolves
+   the user's own choice over the `branding.defaultTheme` setting - so both are
+   honoured by exactly these rules. */
+:root[data-theme='dark'] {
+  --color-bg: #000000;
+  --color-surface: #0a0a0a;
+  --color-surface-hover: #1c1c1f;
+  --color-surface-sunken: #050505;
+  --color-border: #27272a;
+  --color-border-strong: #3f3f46;
+  --color-text: #fafafa;
+  --color-text-muted: #a1a1aa;
+
+  /* Black swallows the light theme's shadows, so elevation is carried by a
+     lighter border instead of a darker drop shadow. */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 55%);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 65%);
+
+  color-scheme: dark;
+}
+
+/* First-paint fallback only. Once the app boots, `data-theme` is always set
+   explicitly - including when the user chose "follow the device" - so this
+   rule exists to stop a white flash before JavaScript runs. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-bg: #000000;
+    --color-surface: #0a0a0a;
+    --color-surface-hover: #1c1c1f;
+    --color-surface-sunken: #050505;
+    --color-border: #27272a;
+    --color-border-strong: #3f3f46;
+    --color-text: #fafafa;
+    --color-text-muted: #a1a1aa;
+
+    color-scheme: dark;
+  }
+}
