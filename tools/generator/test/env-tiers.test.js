@@ -89,7 +89,7 @@ test('deploy tiers carry no leftover secret, and no template hostname', async (t
   for (const tier of ['preproduction', 'production']) {
     const env = parseEnv(path.join(dir, 'backend-node', `.env.${tier}`));
 
-    for (const key of ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET', 'COOKIE_SECRET', 'ENCRYPTION_KEY', 'MONGO_URI', 'REDIS_URL']) {
+    for (const key of ['JWT_ACCESS_SECRET', 'COOKIE_SECRET', 'ENCRYPTION_KEY', 'MONGO_URI', 'REDIS_URL']) {
       assert.equal(env[key], 'CHANGE_ME', `${tier}: ${key} must stay a placeholder`);
     }
 
@@ -123,14 +123,15 @@ test('local tier gets real generated secrets, not placeholders', async (t) => {
   const env = parseEnv(path.join(dir, 'backend-node', '.env.local'));
 
   assert.equal(env.APP_ENV, 'local');
-  for (const key of ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET', 'COOKIE_SECRET', 'ENCRYPTION_KEY']) {
+  for (const key of ['JWT_ACCESS_SECRET', 'COOKIE_SECRET', 'ENCRYPTION_KEY']) {
     assert.notEqual(env[key], 'CHANGE_ME', `${key} should be generated for local`);
     assert.ok(env[key].length >= 16, `${key} looks too short`);
   }
 
-  // The two JWT secrets must differ, or a leaked access secret can mint
-  // refresh tokens.
-  assert.notEqual(env.JWT_ACCESS_SECRET, env.JWT_REFRESH_SECRET);
+  // There is deliberately only one JWT secret. A refresh token is not signed:
+  // it is random bytes hashed against a session document, which is what makes
+  // it revocable. Asserting a second secret here kept a removed variable alive
+  // in the generator long after the runtime stopped reading it.
 
   // The connection strings must name the child project, not the template.
   assert.match(env.MONGO_URI, /probe_app.*probe_local/);

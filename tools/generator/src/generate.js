@@ -158,9 +158,13 @@ function copyFile({ absolute, destination, relative, values, dryRun, report }) {
  * because it looks like it was handled.
  */
 function renderEnvFiles({ templateRoot, outputDir, values, domain, registry, dryRun, report }) {
+  // There is no JWT_REFRESH_SECRET here on purpose. Refresh tokens are opaque
+  // random bytes stored as a hash against a session document rather than
+  // signed JWTs, so no second signing secret exists to generate - see the note
+  // in backend-node/config/index.js. Generating one produced a value that no
+  // env file declared and nothing ever read.
   const localSecrets = {
     JWT_ACCESS_SECRET: tokens.generateSecret(48),
-    JWT_REFRESH_SECRET: tokens.generateSecret(48),
     ENCRYPTION_KEY: tokens.generateSecret(32),
     COOKIE_SECRET: tokens.generateSecret(24),
     MONGO_ROOT_PASSWORD: tokens.generateSecret(24),

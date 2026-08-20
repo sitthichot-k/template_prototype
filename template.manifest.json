@@ -173,9 +173,9 @@
 
   "generatedSecrets": [
     { "key": "JWT_ACCESS_SECRET", "bytes": 48, "tiers": ["local"] },
-    { "key": "JWT_REFRESH_SECRET", "bytes": 48, "tiers": ["local"] },
     { "key": "ENCRYPTION_KEY", "bytes": 32, "tiers": ["local"] },
-    { "key": "COOKIE_SECRET", "bytes": 32, "tiers": ["local"] },
+    { "key": "COOKIE_SECRET", "bytes": 24, "tiers": ["local"] },
+    { "key": "MONGO_ROOT_PASSWORD", "bytes": 24, "tiers": ["local"] },
     { "key": "MONGO_APP_PASSWORD", "bytes": 24, "tiers": ["local"] },
     { "key": "REDIS_PASSWORD", "bytes": 24, "tiers": ["local"] }
   ],
