@@ -1,0 +1,164 @@
+# =============================================================================
+#  CI for the template itself.
+#
+#  Two jobs, and the second is the one that matters:
+#
+#    verify    the checks a child project also runs
+#    generate  actually generate a child and prove it is coherent
+#
+#  A template can pass every test it owns and still emit a project that does
+#  not start, because nothing in `verify` exercises the generator's output.
+#  That gap is exactly where the seed-stub and test-glob bugs lived.
+#
+#  NOTE: `make verify` is deliberately not used here. Its last step runs
+#  `./scripts/compose.sh local config -q`, which needs `.env.local` - a file
+#  .gitignore keeps out of the repo on purpose. The steps are listed
+#  individually instead.
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  verify:
+    name: Lint, test, contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            backend-node/package-lock.json
+            frontend-vue/package-lock.json
+
+      - name: Install
+        run: |
+          npm ci --prefix backend-node
+          npm ci --prefix frontend-vue
+
+      - name: Lint
+        run: |
+          npm --prefix backend-node run lint
+          npm --prefix frontend-vue run lint
+
+      - name: Test
+        run: |
+          npm --prefix backend-node run test
+          npm --prefix frontend-vue run test
+
+      - name: Module contracts
+        run: node backend-node/scripts/verify-module-contracts.js
+
+      - name: Generator unit tests
+        run: node --test tools/generator/test/*.test.js
+
+      # The frontend image can only COPY from its own build context, so the
+      # canonical nginx config is duplicated into it. Nothing keeps the two in
+      # step except this check and the same one inside `make verify`.
+      - name: nginx config has not drifted
+        run: |
+          cmp -s infra/nginx/default.conf frontend-vue/nginx/default.conf || {
+            echo "::error::infra/nginx/default.conf and frontend-vue/nginx/default.conf have drifted."
+            echo "The first is the source of truth - copy it over the second."
+            diff -u infra/nginx/default.conf frontend-vue/nginx/default.conf || true
+            exit 1
+          }
+
+  # ---------------------------------------------------------------------------
+  generate:
+    name: Generate a child and check it holds together
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # Dependency-free by design, so this runs before anything is installed -
+      # which is also the state a human is in right after cloning.
+      - name: Dry run
+        run: |
+          node tools/generator/bin/create-project.js --dry-run \
+            --project-code cismoke --project-name "CI Smoke Test" \
+            --out "${RUNNER_TEMP}/cismoke"
+
+      - name: Generate
+        run: |
+          node tools/generator/bin/create-project.js --yes \
+            --project-code cismoke --project-name "CI Smoke Test" \
+            --org "CI" --locale en \
+            --out "${RUNNER_TEMP}/cismoke"
+
+      - name: The child is coherent
+        working-directory: ${{ runner.temp }}/cismoke
+        run: |
+          fail() { echo "::error::$1"; exit 1; }
+
+          # An unresolved token is left in place on purpose rather than blanked,
+          # so it is visible here instead of failing on first use.
+          if grep -rn --include='*.js' --include='*.json' --include='*.vue' \
+                     --include='*.yml' --include='*.conf' \
+                     -E '__[A-Z][A-Z0-9_]*__' . \
+               | grep -vE '__(APP_VERSION|dirname|filename)__' | grep -v node_modules; then
+            fail "unresolved template tokens in the generated project"
+          fi
+
+          # The local tier's secrets are generated; the deploy tiers keep
+          # CHANGE_ME on purpose. Both halves of that are worth asserting.
+          grep -q 'CHANGE_ME' .env.local && fail ".env.local should have no CHANGE_ME"
+          grep -q 'CHANGE_ME' .env.production || fail ".env.production should keep CHANGE_ME"
+
+          [ -d tools/generator ] && fail "the generator must not travel to a child"
+          grep -qE '^new:' Makefile && fail "the 'new' target must be stripped from a child"
+
+          test -f README.md      || fail "README.md missing"
+          test -f .gitignore     || fail ".gitignore missing"
+          test -f docker-compose.yml || fail "docker-compose.yml missing"
+          test -f frontend-vue/nginx/default.conf || fail "nginx config was not copied into the build context"
+
+          echo "✅ generated project looks coherent"
+
+      - name: The child passes its own checks
+        working-directory: ${{ runner.temp }}/cismoke
+        run: |
+          npm ci --prefix backend-node
+          npm ci --prefix frontend-vue
+          npm --prefix backend-node run lint
+          npm --prefix frontend-vue run lint
+          npm --prefix backend-node run test
+          npm --prefix frontend-vue run test
+          node backend-node/scripts/verify-module-contracts.js
+
+      - name: The child's frontend image builds
+        working-directory: ${{ runner.temp }}/cismoke
+        run: |
+          docker build --target production \
+            --build-arg CSP_IMG_SRC_EXTRA="https://example.test" \
+            -t cismoke-frontend ./frontend-vue
+          # The CSP slots must be resolved at build; a leftover placeholder
+          # means a directive silently reads as literal text at runtime.
+          docker run --rm cismoke-frontend sh -c '
+            grep -q "https://example.test" /etc/nginx/conf.d/default.conf &&
+            ! grep -q "[$]{CSP_" /etc/nginx/conf.d/default.conf &&
+            grep -q "[$]host" /etc/nginx/conf.d/default.conf
+          ' || { echo "::error::CSP substitution or nginx variables are wrong in the built image"; exit 1; }
+          echo "✅ frontend image builds with a correct policy"
