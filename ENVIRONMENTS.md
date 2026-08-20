@@ -120,11 +120,82 @@ than something a deploy triggers under load.
 
 ---
 
+## Where each value actually lives
+
+Three kinds of file, and only one of them ever holds a real secret.
+
+| File | In git? | Read by | Holds |
+|---|---|---|---|
+| `.env.<tier>.example` | **yes** | the generator, as the tier's shape | structure, tier hardening, `CHANGE_ME` |
+| `.env.<tier>` | no | `docker compose --env-file` at run time | the real values, on the machine that runs that tier |
+| `.env.example` | yes | people, as documentation | a local-shaped reference |
+
+The split exists because the shape of a tier and the secrets of a tier are two
+different things with two different audiences. The shape must travel - a clean
+clone has to be able to generate a correct project. The secrets must not.
+
+### Which file the generator reads
+
+```
+.env.<tier>.example   →   .env.<tier>   →   .env.example (local tier only)
+```
+
+The first that exists wins. On a clean clone only the `.example` file is
+present, which is the case that matters: it is what CI, a new laptop and every
+other person actually has.
+
+For `preproduction` and `production` the last step is **not** a fallback - it
+throws. `.env.example` is local-shaped (`APP_ENV=local`, `SWAGGER_ENABLED=true`,
+`COOKIE_SECURE=false`, CORS on localhost), so rendering a deploy tier from it
+produces a development config wearing a production filename. That passed every
+check in this repo once already; it is now fatal instead of quiet.
+
+### Where real values go
+
+**Local** - nothing to do. The generator writes `.env.local` with freshly
+generated secrets, so `make up && make seed` works on the first try. Edit it
+freely; git never sees it.
+
+**Preproduction and production** - the generated `.env.<tier>` arrives full of
+`CHANGE_ME`. Fill it in **on the machine that runs that tier**, or have your
+deployment inject the values from a secret manager. `scripts/compose.sh`
+refuses to bring a tier up while any `CHANGE_ME` remains, so a half-configured
+deploy stops at the wrapper rather than at 3am.
+
+Never fill real values into `.env.<tier>.example`. It is committed, and it is
+the one file in this scheme that must stay boring.
+
+**CI** - nothing to configure. CI has only the `.example` files, on purpose:
+its job is to prove the generator works from what is committed, not from what
+happens to be lying around on one machine.
+
+### Checking that a value arrived
+
+Three places a variable can go missing, in the order worth checking:
+
+| Symptom | Cause |
+|---|---|
+| Not in the container's environment at all | Missing from `.env.<tier>`, so compose never passed it |
+| In the container but `config` does not expose it | Missing from the Joi schema in `backend-node/config/index.js`, which strips unknown keys |
+| Works locally, undefined in a deploy tier | Added to `.env.local` only - the tier files are separate files, all of them need it |
+
+```sh
+./scripts/compose.sh preproduction config | grep -i MY_VAR   # did compose resolve it
+./scripts/compose.sh preproduction exec backend printenv MY_VAR
+```
+
+---
+
 ## Adding a variable
 
 1. Declare and validate it in `backend-node/config/index.js`.
 2. Add it to `backend-node/.env.example` with a comment explaining it.
-3. Add it to all three tier files.
+3. Add it to all three tier files **and** to the two committed shape files,
+   `.env.preproduction.example` and `.env.production.example`. A variable that
+   reaches only the ignored `.env.<tier>` files works on your machine and is
+   absent for everyone who clones - which is exactly the failure this split was
+   introduced to stop. If it carries a secret, its value in the `.example`
+   files is `CHANGE_ME`.
 4. Read it through `require('config')` — never `process.env`. ESLint enforces
    this, which is what keeps the configuration surface auditable.
 

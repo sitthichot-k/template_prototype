@@ -295,8 +295,11 @@ function renderEnvFiles({ templateRoot, outputDir, values, domain, registry, dry
    */
   for (const tier of ENV_TIERS) {
     materialiseEnv({
-      source: path.join(templateRoot, `.env.${tier}`),
-      fallback: path.join(outputDir, '.env.example'),
+      sources: [
+        path.join(templateRoot, `.env.${tier}.example`),
+        path.join(templateRoot, `.env.${tier}`)
+      ],
+      localFallback: path.join(outputDir, '.env.example'),
       target: path.join(outputDir, `.env.${tier}`),
       replacements: rootReplacements[tier],
       tier,
@@ -305,8 +308,11 @@ function renderEnvFiles({ templateRoot, outputDir, values, domain, registry, dry
     });
 
     materialiseEnv({
-      source: path.join(templateRoot, 'backend-node', `.env.${tier}`),
-      fallback: path.join(outputDir, 'backend-node', '.env.example'),
+      sources: [
+        path.join(templateRoot, 'backend-node', `.env.${tier}.example`),
+        path.join(templateRoot, 'backend-node', `.env.${tier}`)
+      ],
+      localFallback: path.join(outputDir, 'backend-node', '.env.example'),
       target: path.join(outputDir, 'backend-node', `.env.${tier}`),
       replacements: backendReplacements[tier],
       tier,
@@ -317,8 +323,11 @@ function renderEnvFiles({ templateRoot, outputDir, values, domain, registry, dry
     const frontendFallback = path.join(outputDir, FRONTEND_DIR, '.env.example');
     if (fs.existsSync(frontendFallback) || dryRun) {
       materialiseEnv({
-        source: path.join(templateRoot, FRONTEND_DIR, `.env.${tier}`),
-        fallback: frontendFallback,
+        sources: [
+          path.join(templateRoot, FRONTEND_DIR, `.env.${tier}.example`),
+          path.join(templateRoot, FRONTEND_DIR, `.env.${tier}`)
+        ],
+        localFallback: frontendFallback,
         target: path.join(outputDir, FRONTEND_DIR, `.env.${tier}`),
         replacements: { VITE_APP_NAME: values.PROJECT_NAME, VITE_DEFAULT_LOCALE: values.DEFAULT_LOCALE },
         tier,
@@ -336,16 +345,41 @@ function renderEnvFiles({ templateRoot, outputDir, values, domain, registry, dry
  * survive - an env file people are expected to read and edit is worth keeping
  * legible.
  *
- * @param {string} params.source    The template's tier file: carries the tier's shape.
- * @param {string} params.fallback  `.env.example`, used only if the tier file is absent.
+ * @param {string[]} params.sources        Candidate shape files, most preferred first:
+ *   `.env.<tier>.example` is committed and is what a clean clone has;
+ *   `.env.<tier>` is the working copy git ignores, present only on a machine
+ *   where somebody has been editing that tier.
+ * @param {string} params.localFallback     `.env.example`. Local-shaped, so it is
+ *   accepted for the local tier only - see the throw below.
  */
-function materialiseEnv({ source, fallback, target, replacements, tier, dryRun, report }) {
+function materialiseEnv({ sources, localFallback, target, replacements, tier, dryRun, report }) {
   if (dryRun) {
     report.envFiles = (report.envFiles || 0) + 1;
     return;
   }
 
-  const origin = fs.existsSync(source) ? source : fallback;
+  let origin = sources.find((candidate) => fs.existsSync(candidate));
+
+  if (!origin) {
+    // `.env.example` is local-shaped: APP_ENV=local, SWAGGER_ENABLED=true,
+    // COOKIE_SECURE=false, CORS pointing at localhost. Rendering a deploy tier
+    // from it produces a development config wearing a production filename,
+    // which passes every other check in the repo and fails only in the way
+    // that matters. Falling back to it silently is how that shipped once
+    // already, so a missing deploy-tier shape is fatal rather than quiet.
+    if (tier !== 'local') {
+      throw new Error(
+        `No shape file for the "${tier}" tier. Expected one of:\n` +
+          sources.map((candidate) => `  ${candidate}`).join('\n') +
+          `\n\nThe .example file is the committed one and should be in the repo. ` +
+          `If it is missing, restore it rather than letting this tier inherit ` +
+          `.env.example, which is local-shaped.`
+      );
+    }
+
+    origin = localFallback;
+  }
+
   if (!origin || !fs.existsSync(origin)) return;
 
   const lines = fs.readFileSync(origin, 'utf8').split(/\r?\n/);
