@@ -81,6 +81,18 @@ test('template-only regions do not reach the child', async () => {
   fs.rmSync(outputDir, { recursive: true, force: true });
 });
 
+test('the child CI workflow has no generator job left in it', async () => {
+  const outputDir = await generateInto();
+  const ciYamlPath = path.join(outputDir, '.github', 'workflows', 'ci.yml');
+  const ciYaml = fs.readFileSync(ciYamlPath, 'utf8');
+
+  assert.doesNotMatch(ciYaml, /tools\/generator/, 'the generator must not be referenced');
+  assert.doesNotMatch(ciYaml, /^\s*generate:/m, 'the generate job must be stripped');
+  assert.match(ciYaml, /^\s*verify:/m, 'the verify job must survive');
+
+  fs.rmSync(outputDir, { recursive: true, force: true });
+});
+
 test('no template-authoring material reaches the child', async () => {
   const outputDir = await generateInto();
 

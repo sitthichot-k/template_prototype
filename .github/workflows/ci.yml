@@ -1,14 +1,14 @@
 # =============================================================================
-#  CI for the template itself.
+#  CI.
 #
-#  Two jobs, and the second is the one that matters:
-#
-#    verify    the checks a child project also runs
-#    generate  actually generate a child and prove it is coherent
+#  verify    the checks a child project also runs
+# >>> template-only
+#  generate  actually generate a child and prove it is coherent
 #
 #  A template can pass every test it owns and still emit a project that does
 #  not start, because nothing in `verify` exercises the generator's output.
 #  That gap is exactly where the seed-stub and test-glob bugs lived.
+# <<< template-only
 #
 #  NOTE: `make verify` is deliberately not used here. Its last step runs
 #  `./scripts/compose.sh local config -q`, which needs `.env.local` - a file
@@ -66,8 +66,10 @@ jobs:
       - name: Module contracts
         run: node backend-node/scripts/verify-module-contracts.js
 
+# >>> template-only
       - name: Generator unit tests
         run: node --test tools/generator/test/*.test.js
+# <<< template-only
 
       # The frontend image can only COPY from its own build context, so the
       # canonical nginx config is duplicated into it. Nothing keeps the two in
@@ -81,6 +83,7 @@ jobs:
             exit 1
           }
 
+# >>> template-only
   # ---------------------------------------------------------------------------
   generate:
     name: Generate a child and check it holds together
@@ -162,3 +165,4 @@ jobs:
             grep -q "[$]host" /etc/nginx/conf.d/default.conf
           ' || { echo "::error::CSP substitution or nginx variables are wrong in the built image"; exit 1; }
           echo "✅ frontend image builds with a correct policy"
+# <<< template-only
