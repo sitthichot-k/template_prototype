@@ -250,7 +250,7 @@ function levelAccent(value) {
 
                 <td class="nowrap muted">{{ entry.actorLabel || '—' }}</td>
 
-                <td class="message">
+                <td class="is-wrappable">
                   {{ entry.message }}
                   <span v-if="entry.context?.statusCode" class="status" :class="`status--${Math.floor(entry.context.statusCode / 100)}xx`">
                     {{ entry.context.statusCode }}
@@ -452,10 +452,6 @@ function levelAccent(value) {
 .logs code {
   font-family: var(--font-mono);
   font-size: 0.8125rem;
-}
-
-.message {
-  word-break: break-word;
 }
 
 .badge {

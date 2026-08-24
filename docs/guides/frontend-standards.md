@@ -224,6 +224,12 @@ sorting and search come for free, and it handles the actions column and
 horizontal scrolling. Row actions go in the `#row-actions` slot wrapped in
 `.row-actions`.
 
+Cells do not break mid-word by default (`.table th, .table td` set
+`overflow-wrap: normal`) — a column's floor is its longest word, never
+narrower. Only a cell that genuinely holds a long unbreakable token (a user
+agent, a URL) should break mid-word; give it `class="is-wrappable"` instead of
+adding a one-off `word-break` rule in the view's own `<style>`.
+
 ### Dialogs
 
 Use `ModalDialog`. It wraps the native `<dialog>` element, so focus trapping,

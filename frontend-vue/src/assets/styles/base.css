@@ -423,6 +423,24 @@ canvas {
   min-width: 32rem;
 }
 
+/* `.page` sets `overflow-wrap: anywhere` so a long token doesn't widen the
+   page, but a table cell inherits that and lets auto layout shrink a column
+   below its longest word - a name column collapses to one character wide and
+   every letter gets its own line. A cell's floor should be its longest word,
+   no lower, so cells opt back out of the page-wide rule. */
+.table th,
+.table td {
+  overflow-wrap: normal;
+}
+
+/* Cells that genuinely hold a long unbreakable token - a user agent, a URL -
+   opt back in here, with a cap so the column can't grow past a readable
+   width even when the row has room to spare. */
+.table td.is-wrappable {
+  overflow-wrap: anywhere;
+  max-width: 24rem;
+}
+
 /* --- Below --bp-md: phones and small tablets ------------------------------- */
 @media (max-width: 48rem) {
   .page-header {
