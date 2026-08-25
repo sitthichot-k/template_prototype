@@ -9,7 +9,7 @@ advantages here would be real: typed manifests, a shared contract between
 backend and frontend, compile-time checks on the permission strings this
 template cares so much about.
 
-Against that: the team's existing services (rpims, PayHub, can) are all plain
+Against that: the team's existing services are all plain
 CommonJS Express. The template's purpose is to be adopted, and an adoption that
 requires the team to change language, build tooling and debugging workflow on
 the same day they adopt a new architecture is an adoption that stalls.

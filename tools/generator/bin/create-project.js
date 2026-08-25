@@ -68,7 +68,7 @@ Optional
   --org <name>              Organisation name         (default: Acme)
   --primary-color <hex>     (default: #2563eb)
   --locale <th|en>          (default: th)
-  --domain <host>           Production hostname, e.g. hrms.mfu.ac.th. Fills
+  --domain <host>           Production hostname, e.g. hrms.example.com. Fills
                             CORS_ORIGINS and COOKIE_DOMAIN for preproduction
                             (preprod.<host>) and production. Left as CHANGE_ME
                             when omitted.
@@ -80,8 +80,8 @@ Optional
 Example
   node tools/generator/bin/create-project.js \\
     --project-code hrms --project-name "HR Management System" \\
-    --domain hrms.mfu.ac.th \\
-    --registry registry.mfu.ac.th --out ../hrms
+    --domain hrms.example.com \\
+    --registry registry.example.com --out ../hrms
 `;
 }
 

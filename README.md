@@ -10,7 +10,7 @@ kernel that makes adding a third one a folder rather than a refactor.**
 ```
 node tools/generator/bin/create-project.js \
   --project-code hrms --project-name "HR Management System" \
-  --domain hrms.mfu.ac.th --registry registry.mfu.ac.th --out ../hrms
+  --domain hrms.example.com --registry registry.example.com --out ../hrms
 
 cd ../hrms && make up && make seed
 ```

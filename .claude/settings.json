@@ -1,10 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Read(//e/Template/rpims/frontend-vue/src/router/middlewares/**)",
-      "Read(//e/Template/rpims/backend-node/server/Project/settings/**)",
       "Bash(rm -rf \"E:/MyApp/_probe\")",
-      "Bash(node tools/generator/bin/create-project.js --yes --project-code hrms --project-name \"HR System\" --org \"MFU\" --primary-color \"#0f766e\" --domain hrms.mfu.ac.th --registry registry.mfu.ac.th --out \"E:/MyApp/_probe\")",
+      "Bash(node tools/generator/bin/create-project.js --yes --project-code hrms --project-name \"HR System\" --org \"Acme\" --primary-color \"#0f766e\" --domain hrms.example.com --registry registry.example.com --out \"E:/MyApp/_probe\")",
       "Read(//e/MyApp/**)",
       "Bash(node backend-node/scripts/verify-module-contracts.js)",
       "Bash(node --test tools/generator/test/env-tiers.test.js)",
@@ -53,7 +51,7 @@
       "Bash(echo \"compose exit=$?\")",
       "Bash(node tools/generator/bin/create-project.js --help)",
       "Bash(rm -rf __TRACKED_VAR__/hrms)",
-      "Bash(node tools/generator/bin/create-project.js --project-code hrms --project-name 'HR Management System' --org MFU --domain hrms.mfu.ac.th --registry registry.mfu.ac.th --yes --out __TRACKED_VAR__/hrms)",
+      "Bash(node tools/generator/bin/create-project.js --project-code hrms --project-name 'HR Management System' --org Acme --domain hrms.example.com --registry registry.example.com --yes --out __TRACKED_VAR__/hrms)",
       "Bash(npm --prefix backend-node run test)",
       "Bash(node --test tools/generator/test/*.test.js)",
       "Bash(rm -rf __TRACKED_VAR__/chk)",

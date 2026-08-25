@@ -4,7 +4,7 @@
 
 ## Context
 
-The reference projects this template draws on (rpims, PayHub, can) delegate
+The enterprise projects this template draws on delegate
 both authentication and authorization to a shared external IAM: routes forward
 to a B2B admin API, and the project database holds only application context.
 
