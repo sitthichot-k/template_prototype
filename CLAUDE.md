@@ -128,6 +128,31 @@ made once for every project that will ever exist from this template. That
 is a higher bar than "does this work for this one screen", and it is the
 bar architectural pushback in this repo is measured against.
 
+## Changing the template itself
+
+The template is a contract every existing and future project depends on. Fix
+the cause; do not take the opportunity to improve the shape.
+
+- Match the surrounding code exactly: CommonJS, `'use strict'`, the existing
+  http envelope, error and logging helpers, the naming already used in that
+  directory. A change that reads as written by a different person is wrong even
+  when it works.
+- No new dependency, no new abstraction, no renamed or moved file, no
+  reformatting, no TypeScript. `tools/generator/` is deliberately
+  dependency-free — a few lines of plain Node beats an npm package.
+- Change the smallest surface that removes the cause. A one-line fix with a
+  test beats a refactor that happens to contain the fix.
+- Answer "if this happens again, will we know sooner?" in the same change — add
+  the test, contract check or CI step next to the ones already there, not as a
+  new mechanism.
+- A fix that only makes the symptom go away is not a fix. Say so and stop.
+- Architectural change is a separate conversation: propose it, do not perform it.
+- Anything above the `template-only` marker in this file travels into every
+  generated project. Judge it by whether you can defend it to engineers who
+  have never seen this repository.
+- Done is what "Before you say something is done" above defines, plus CI green
+  confirmed with `gh run watch` rather than assumed.
+
 ## How generation works
 
 ```sh
