@@ -8,6 +8,7 @@
  * leaving a half-written project behind.
  */
 
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -512,16 +513,58 @@ function relocateInheritedAdrs({ outputDir, values, report }) {
 }
 
 /**
+ * Identifies the template tree this project was generated from.
+ *
+ * `templateVersion` is maintained by hand and has not moved in a long time, so
+ * it cannot answer the question that actually comes up later: did this project
+ * change a file it inherited, or did the template move on afterwards? A commit
+ * can - `git diff <templateCommit> -- <path>` in the template answers it
+ * exactly.
+ *
+ * Generation reads the working tree, not the last commit, so an uncommitted
+ * change in the template travels into the child silently. Recording the commit
+ * alone would therefore name a tree the child was not generated from; the dirty
+ * flag is what keeps the record honest.
+ *
+ * `--no-optional-locks` keeps this read-only: it must never take the index lock
+ * of the repository someone is working in.
+ *
+ * Both fields are null when the template is not a git checkout, or git is not
+ * installed. Generation is still valid - the project just cannot say where it
+ * came from.
+ */
+function readTemplateSource(templateRoot) {
+  const git = (args) =>
+    execFileSync('git', args, {
+      cwd: templateRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore']
+    }).trim();
+
+  try {
+    return {
+      commit: git(['rev-parse', 'HEAD']),
+      dirty: git(['--no-optional-locks', 'status', '--porcelain']) !== ''
+    };
+  } catch {
+    return { commit: null, dirty: null };
+  }
+}
+
+/**
  * Records the template version the project came from, so a later upgrade can
  * tell what it is upgrading from.
  */
 function writeChildManifest({ templateRoot, outputDir, values }) {
   const templateManifest = JSON.parse(fs.readFileSync(path.join(templateRoot, 'template.manifest.json'), 'utf8'));
+  const source = readTemplateSource(templateRoot);
 
   const childManifest = {
     generatedFrom: {
       templateName: templateManifest.templateName,
       templateVersion: templateManifest.templateVersion,
+      templateCommit: source.commit,
+      templateTreeDirty: source.dirty,
       compatProfile: templateManifest.compatProfile,
       generatedAt: new Date().toISOString()
     },
@@ -537,8 +580,10 @@ function writeChildManifest({ templateRoot, outputDir, values }) {
     upgrade: {
       note:
         'This project was generated from a template, not forked from it. To take an upgrade, ' +
-        'diff against the template at the version above and apply what you want - the module ' +
-        'boundaries are designed so platform changes stay out of your feature code.'
+        'diff against templateCommit above and apply what you want - the module boundaries are ' +
+        'designed so platform changes stay out of your feature code. If templateTreeDirty is ' +
+        'true, that commit is not the whole story: the template had uncommitted changes when ' +
+        'this project was generated, and they came across too.'
     }
   };
 
