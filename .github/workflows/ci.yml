@@ -66,6 +66,11 @@ jobs:
       - name: Module contracts
         run: node backend-node/scripts/verify-module-contracts.js
 
+      # A mode, not a file's contents, and therefore invisible to every other
+      # check here and to Windows, where the bit is reported but not stored.
+      - name: Executable bits
+        run: node backend-node/scripts/verify-exec-bits.js
+
 # >>> template-only
       - name: Generator unit tests
         run: node --test tools/generator/test/*.test.js
@@ -138,6 +143,10 @@ jobs:
           test -f docker-compose.yml || fail "docker-compose.yml missing"
           test -f frontend-vue/nginx/default.conf || fail "nginx config was not copied into the build context"
 
+          # Makefile's first line is COMPOSE := ./scripts/compose.sh, so a
+          # child that cannot execute it has no working make target at all.
+          test -x scripts/compose.sh || fail "scripts/compose.sh is not executable in the generated project"
+
           echo "✅ generated project looks coherent"
 
       - name: The child passes its own checks
@@ -150,6 +159,11 @@ jobs:
           npm --prefix backend-node run test
           npm --prefix frontend-vue run test
           node backend-node/scripts/verify-module-contracts.js
+
+          # Existence was asserted above; this is the part that was missing -
+          # actually invoking the wrapper every make target goes through.
+          # `config` parses the compose files and writes nothing.
+          ./scripts/compose.sh local config -q
 
       - name: The child's frontend image builds
         working-directory: ${{ runner.temp }}/cismoke

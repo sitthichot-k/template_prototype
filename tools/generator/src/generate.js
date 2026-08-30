@@ -146,6 +146,14 @@ function copyFile({ absolute, destination, relative, values, dryRun, report }) {
   if (!dryRun) {
     fs.mkdirSync(path.dirname(destination), { recursive: true });
     fs.writeFileSync(destination, rendered, 'utf8');
+
+    // writeFileSync creates the file 0644 whatever the source was, so the
+    // executable bit has to be put back deliberately. The decision comes from
+    // the content, not from the source file's mode: on Windows the filesystem
+    // reports an executable bit that is not really there, so copying the mode
+    // across would carry a value nobody can trust. A leading `#!` is the same
+    // signal the kernel uses.
+    if (rendered.startsWith('#!')) fs.chmodSync(destination, 0o755);
   }
 }
 

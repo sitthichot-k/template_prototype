@@ -70,6 +70,7 @@ verify: ## Run the full template validation suite
 	npm --prefix backend-node run test
 	npm --prefix frontend-vue run test
 	node backend-node/scripts/verify-module-contracts.js
+	node backend-node/scripts/verify-exec-bits.js
 # >>> template-only
 # The generator only exists in the template, so only the template can test it.
 # Globbed rather than passed as a directory: `node --test <dir>` fails on
